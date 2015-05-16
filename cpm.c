@@ -1,14 +1,36 @@
+/* cpm.c
+   Useful functions for Workshop E 
+*/
+
 #include<stdio.h>
 #include<stdlib.h>
 #include<string.h>
 #include<limits.h>
 #include "cpm.h"
-
 unsigned char bitmap[23];
-
 struct CPMdirent directory[32];
 
-//Create  bitmap of  0 or 1.
+int toggle_bit(int block)
+{
+
+	int elem=block/8;
+	int pos=block%8;
+	int mask=1<<pos;
+
+	bitmap[elem]^=mask;
+
+	return bitmap[elem]&mask;
+}
+
+
+int block_status(int block)
+{
+	int elem=block/8;
+	int pos=block%8;
+	int mask=1<<pos;
+
+	return bitmap[elem]&mask;
+}
 
 void displayelem(int elem)
 {
@@ -25,17 +47,6 @@ void displayelem(int elem)
         }
     }
 }
-
-int toggle_bit(int bit)
-{
-    int elem=bit/8;
-    int pos=bit%8;
-    int mask=1<<pos;
-    bitmap[elem]^=mask;
-    return bitmap[elem]&mask;
-}
-
-
 
 void display()
 {
@@ -63,15 +74,6 @@ void display()
         }
     }
     printf("\n");
-}
-
-//return value 0 or 1 of the the bit  in bitmap
-int block_status(int bit)
-{
-    int elem=bit/8;
-    int pos=bit%8;
-    int mask=1<<pos;
-    return bitmap[elem]&mask;
 }
 
 void initialise()
@@ -166,92 +168,92 @@ int main()
         scanf("%d",&command);
         switch (command)
         {
-        case 1:
-            initialise();
-            filePos=-1;
-            continue;
-            break;
-        case 2:
-            listFile();
-            continue;
-        case 3:
-            display();
-            continue;
-        case 4:
-        {
-            printf(" enter your file name: ");
-            scanf("%s",filename);
-            printf(" enter file extention: ");
-            scanf("%s",filetype);
-            filePos = openFile(filename,filetype);
-            if(filePos==-1)
-            {
-                printf("File %s.%s created\n",filename, filetype);
-                continue;
-            }
-            else
-            {
-                printf("Opened file %s.%s\n", directory[filePos].filename , directory[filePos].filetype );
-                continue;
-            }
-        }
-        case 5:
-            if(filePos>-1)
-            {
-                printf("File name: %s.%s on bit: ",directory[filePos].filename, directory[filePos].filetype);
-                for (i=0; i<16; i++)
-                {
-                    printf("%d ,",directory[filePos].blocks [i]);
-                }
-                printf("\n");
-                continue;
-            } else {
-                printf(" need to open the file first\n");
-                continue;
-            }
-        case 6:
-        {
-            if(filePos!=-1)
-            {
-                for (i=1; i<184; i++) {
-                    if(block_status(i)==0) {
-                        toggle_bit(i);
-                        writeBit=i;
-                        break;
-                    }
-                }
-                directory[filePos].blocks[directory[filePos].blockcount]=writeBit;
-                directory[filePos].blockcount ++;
-            } else {
-                printf(" need to open the file first\n\n");
-            }
-            continue;
-            break;
-        }
-        case 7:
-            if(filePos!=-1)
-            {
-                for(i=0; i<directory[filePos].blockcount+1; i++)
-                {
-                    toggle_bit(directory[filePos].blocks[i]);
-                    continue;
-                }
-                memset(&directory[filePos].blocks,NULL, sizeof(char)*16);
-                memset(&directory[filePos].filename,NULL, sizeof(char)*9);
-                memset(&directory[filePos].filetype,NULL, sizeof(char)*9);
-                directory[filePos].blockcount =0;
-                filePos=-1;
-            } else {
-                printf("No file open");
+			case 1:
+				initialise();
+				filePos=-1;
+				continue;
+				break;
+			case 2:
+				listFile();
+				continue;
+			case 3:
+				display();
+				continue;
+			case 4:
+			{
+				printf(" enter your file name: ");
+				scanf("%s",filename);
+				printf(" enter file extention: ");
+				scanf("%s",filetype);
+				filePos = openFile(filename,filetype);
+				if(filePos==-1)
+				{
+					printf("File %s.%s created\n",filename, filetype);
+					continue;
+				}
+				else
+				{
+					printf("Opened file %s.%s\n", directory[filePos].filename , directory[filePos].filetype );
+					continue;
+				}
+			}
+			case 5:
+				if(filePos>-1)
+				{
+					printf("File name: %s.%s on bit: ",directory[filePos].filename, directory[filePos].filetype);
+					for (i=0; i<16; i++)
+					{
+						printf("%d ,",directory[filePos].blocks [i]);
+					}
+					printf("\n");
+					continue;
+				} else {
+					printf(" need to open the file first\n");
+					continue;
+				}
+			case 6:
+			{
+				if(filePos!=-1)
+				{
+					for (i=1; i<184; i++) {
+						if(block_status(i)==0) {
+							toggle_bit(i);
+							writeBit=i;
+							break;
+						}
+					}
+					directory[filePos].blocks[directory[filePos].blockcount]=writeBit;
+					directory[filePos].blockcount ++;
+				} else {
+					printf(" need to open the file first\n\n");
+				}
+				continue;
+				break;
+			}
+			case 7:
+				if(filePos!=-1)
+				{
+					for(i=0; i<directory[filePos].blockcount+1; i++)
+					{
+						toggle_bit(directory[filePos].blocks[i]);
+						continue;
+					}
+					memset(&directory[filePos].blocks,NULL, sizeof(char)*16);
+					memset(&directory[filePos].filename,NULL, sizeof(char)*9);
+					memset(&directory[filePos].filetype,NULL, sizeof(char)*9);
+					directory[filePos].blockcount =0;
+					filePos=-1;
+				} else {
+					printf("No file open");
 
-            }
-            continue;
-        case 0:
-        {
-            filePos=-1;
-        }
-        default:
-            break;
+				}
+				continue;
+			case 0:
+			{
+				filePos=-1;
+			}
+			default:
+				break;
         }
     }
     return 0;
