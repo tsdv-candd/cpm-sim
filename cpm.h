@@ -6,10 +6,13 @@
 /* cpm.h
    Various definitions for Workshop E
 */
+/* Define */
+#define BITMAP_SIZE 12	/* Bit map size in bytes */
+#define DIR_NUM 128		/* number of directory */
 
 /* The bitmap */
 //extern unsigned char bitmap[23];
-extern unsigned char bitmap[12];
+extern unsigned char bitmap[BITMAP_SIZE];
 /* 360Kb disk with 4Kb blocks -> 11.25 bytes for bitmap
    so round up to 12 */
 
@@ -32,7 +35,19 @@ struct CPMdirent
 
 /* The Directory */
 //extern struct CPMdirent directory[32];
-extern struct CPMdirent directory[128];
+extern struct CPMdirent directory[DIR_NUM];
+
+/* Enum type for display the menu */
+typedef enum {
+	EXIT = 0,
+	INIT_DISK,
+	LIST_FILE,
+	DISPLAY_FREE_BITMAP,
+	OPEN_CREATE_FILE,
+	READ_FILE,
+	WRITE_FILE,
+	DELETE_FILE
+} menu_type;
 
 int toggle_bit(int block);
 /* Toggles the value of the bit block, in
@@ -45,6 +60,14 @@ int block_status(int block);
    returns 0 if bitmap bit is 0, not
    0 if bitmap bit is 1
    Does NOT validate block!!!
+*/
+menu_type menu();
+/* Display the operation menu of the pcm simulator
+*/
+
+void disk_init ();
+/* Disk initialise : initialise the content of the Disk.
+   return : none
 */
 #endif
 
