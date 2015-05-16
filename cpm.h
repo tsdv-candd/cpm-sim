@@ -8,6 +8,7 @@
 */
 
 /* The bitmap */
+//extern unsigned char bitmap[23];
 extern unsigned char bitmap[12];
 /* 360Kb disk with 4Kb blocks -> 11.25 bytes for bitmap
    so round up to 12 */
@@ -30,6 +31,7 @@ struct CPMdirent
 */
 
 /* The Directory */
+//extern struct CPMdirent directory[32];
 extern struct CPMdirent directory[128];
 
 int toggle_bit(int block);
