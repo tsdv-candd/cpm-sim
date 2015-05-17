@@ -5,34 +5,60 @@
 #include <string.h> /* For using memset function */
 #include"cpm.h"
 
-unsigned char bitmap[BITMAP_SIZE];
-struct CPMdirent directory[DIR_NUM];
+unsigned char bitmap[BITMAP_LENGHT];
+struct CPMdirent directory[ENTRIES_NUM];
+
+#define EMPTY_STR "";
 
 int main ()
 {
-	int select = -1;
-	printf("Hello cpmsim!\n");
-	select = menu();
-	fprintf(stderr, "Select #%d\n", select);
-	switch(select) {
-		case INIT_DISK:
-		break;
-		case LIST_FILE:
-		break;
-		case DISPLAY_FREE_BITMAP:
-		break;
-		case OPEN_CREATE_FILE:
-		break;
-		case READ_FILE:
-		break;
-		case WRITE_FILE:
-		break;
-		case DELETE_FILE:
-		break;
-		default:
-		break;		
-	}
-	return 0;
+    int select = -1;
+    int fd = -1;
+    printf("Hello cpmsim!\n");
+    do {
+        select = menu();
+        fprintf(stderr, "Select #%d\n", select);
+        switch(select) {
+        case INIT_DISK:
+            disk_init();
+            break;
+        case LIST_FILE:
+            list_file_in_dir();
+            break;
+        case DISPLAY_FREE_BITMAP:
+            disp_bit_map();
+            break;
+        case OPEN_CREATE_FILE:
+        {
+            char fname[9];
+            char ftype[4];
+            get_name_and_type(fname, ftype);
+            fd = open_create_file(fname, ftype);
+            if(fd > 0) {
+                printf("File '%s.%s' is opened\n", directory[fd].filename, directory[fd].filetype);
+            } else if (fd == -1) {
+                printf("File '%s.%s' is created\n",fname, ftype);
+            } else {
+                printf("Error! Open/Create file\n");
+            }
+        }
+        break;
+        case READ_FILE:
+            read_file(fd);
+            break;
+        case WRITE_FILE:
+            write_file(fd);
+            break;
+        case DELETE_FILE:
+            delete_file(fd);
+            break;
+        case EXIT:
+        default:
+            break;
+        }
+    } while (select != EXIT);
+
+    return 0;
 }
 
 int toggle_bit(int block)
@@ -57,40 +83,151 @@ int block_status(int block)
     return bitmap[elem]&mask;
 }
 
-/*
- * Display main menu of the program
- */
- menu_type menu()
- {
-	int input = -1;
-	do {
-		printf("\n\n----------------------------------\n");
-		printf("\tCP/M simulation Menu\n");
-		printf("----------------------------------\n");
-		printf("0 - Exit\n");
-		printf("1 - Initialise Disk\n");
-		printf("2 - List Files in the Directory\n");
-		printf("3 - Display the Free Bitmap\n");
-		printf("4 - Open/Create File\n");
-		printf("5 - Read File\n");
-		printf("6 - Write File\n");
-		printf("7 - Delete File\n");
-		printf("----------------------------------\n");
-		printf("Select number> ");
-		scanf("%d", &input);
-		
-		/*
-		 * Clear stdin after read input 
-		 */
-		while ( getchar() != '\n' );
-	} while ((input < 0) || (input > 7));
-	return input;
- }
+menu_type menu()
+{
+    int input = -1;
 
- /* Initialise Disk
- */
- void disk_init ()
- {
-	 memset(bitmap, 0, sizeof(bitmap));
-	 memset(directory, 0, sizeof(directory));
- }
+    /* Display the help menu
+    */
+    printf("\n\n----------------------------------\n");
+    printf("\tCP/M simulation Menu\n");
+    printf("----------------------------------\n");
+    printf("0 - Exit\n");
+    printf("1 - Initialise Disk\n");
+    printf("2 - List Files in the Directory\n");
+    printf("3 - Display the Free Bitmap\n");
+    printf("4 - Open/Create File\n");
+    printf("5 - Read File\n");
+    printf("6 - Write File\n");
+    printf("7 - Delete File\n");
+    printf("----------------------------------\n");
+    printf("Select number> ");
+
+    /* Read the input from keyboard.
+    */
+    scanf("%d", &input);
+
+    /*
+     * Clear stdin after read input
+     */
+    clear_stdin();
+    //while ( getchar() != '\n' );
+
+    return input;
+}
+
+void disk_init ()
+{
+    memset(bitmap, 0, sizeof(bitmap));
+    memset(directory, 0, sizeof(directory));
+}
+
+void list_file_in_dir()
+{
+    int i = 0;
+    int is_empty_dir = 1;
+    fprintf(stderr, "List of files in directory\n");
+    printf("-------------------------------------------------------------------------\n");
+    printf("|\tFile name\t|\tFile type \t|\tFile size\t|\n");
+    printf("-------------------------------------------------------------------------\n");
+    for(i = 0; i < ENTRIES_NUM; i++) {
+        /*  Print file information : | file name | file type | fileize |
+         *	Size of each block = 4 KB then file_size = (block count) *4 (KB)
+         */
+        if(strlen(directory[i].filename)) {
+            printf("|\t%s\t\t|\t%s\t\t|\t%dKB\t\t|\n", directory[i].filename, directory[i].filetype, (directory[i].blockcount * 4));
+            printf("-------------------------------------------------------------------------\n");
+            is_empty_dir = 0;
+        }
+    }
+    if(is_empty_dir) {
+        printf("Empty directory! There is not any file\n");
+    }
+}
+
+void disp_bit_map()
+{
+    fprintf(stderr, "Display bitmap status\n");
+}
+
+int open_create_file(char *fname, char *ftype)
+{
+    int error = -2;
+    int create_file = -1;
+    int i = 0;
+    //fprintf(stderr, "Open/Create File\n");
+    if((fname == NULL) || ftype == NULL) {
+        fprintf(stderr,"Error! could not open NULL file name or file type\n");
+        return error;
+    }
+    if(strlen(fname) > FILE_NAME_LEN) {
+        fprintf(stderr,"Error! not allow file name length > %d\n", FILE_NAME_LEN);
+        return error;
+    }
+    if(strlen(ftype) > FILE_TYPE_LEN) {
+        fprintf(stderr,"Error! not allow file type length > %d\n", FILE_TYPE_LEN);
+        return error;
+    }
+    for(i = 0; i < ENTRIES_NUM; i++) {
+        /* In case found file name and file type in directory
+         * Return position of the file as the file descriptor.
+         */
+        if(!strcmp(directory[i].filename,fname) && !strcmp(directory[i].filetype, ftype)) {
+            return i;
+        }
+    }
+    for(i = 0; i < ENTRIES_NUM; i++) {
+        /* Create the file with the file name and file type
+         * And append that file at the end of directory entries.
+         */
+        if(strlen(directory[i].filename) == 0) {
+            directory[i].usercode = 1;
+            strncpy(directory[i].filename, fname, strlen(fname) + 1);
+            strncpy(directory[i].filetype, ftype, strlen(ftype) + 1);
+            return create_file;
+        }
+    }
+    return error;
+}
+
+
+int read_file(int fd)
+{
+    int numbytes = -1;
+    fprintf(stderr, "Start read file\n");
+    return numbytes;
+}
+
+int write_file(int fd)
+{
+    int numbytes = -1;
+    fprintf(stderr, "Start write file\n");
+    return numbytes;
+}
+
+
+int delete_file(int fd)
+{
+    //int numbytes = -1;
+    fprintf(stderr, "Start delete file\n");
+    return 0;
+}
+
+int get_name_and_type( char fname[9], char ftype[4])
+{
+    printf("\tEnter file name> ");
+    scanf("%s", fname);
+    clear_stdin();
+    printf("\tEnter file type> ");
+    scanf("%s", ftype);
+    clear_stdin();
+    return 0;
+}
+
+void clear_stdin()
+{
+    /*
+     * Clear stdin after read input
+     */
+    while ( getchar() != '\n' );
+}
