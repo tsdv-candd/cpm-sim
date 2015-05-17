@@ -13,51 +13,50 @@ struct CPMdirent directory[ENTRIES_NUM];
 int main ()
 {
     int select = -1;
-    int fd = -1;
+	int fd = -1;
     printf("Hello cpmsim!\n");
     do {
         select = menu();
-        fprintf(stderr, "Select #%d\n", select);
-        switch(select) {
-        case INIT_DISK:
-            disk_init();
-            break;
-        case LIST_FILE:
-            list_file_in_dir();
-            break;
-        case DISPLAY_FREE_BITMAP:
-            disp_bit_map();
-            break;
-        case OPEN_CREATE_FILE:
-        {
-            char fname[9];
-            char ftype[4];
-            get_name_and_type(fname, ftype);
-            fd = open_create_file(fname, ftype);
-            if(fd > 0) {
-                printf("File '%s.%s' is opened\n", directory[fd].filename, directory[fd].filetype);
-            } else if (fd == -1) {
-                printf("File '%s.%s' is created\n",fname, ftype);
-            } else {
-                printf("Error! Open/Create file\n");
-            }
-        }
-        break;
-        case READ_FILE:
-            read_file(fd);
-            break;
-        case WRITE_FILE:
-            write_file(fd);
-            break;
-        case DELETE_FILE:
-            delete_file(fd);
-            break;
-        case EXIT:
-        default:
-            break;
-        }
+		switch(select) 
+		{
+		case INIT_DISK:
+			disk_init();
+			break;
+		case LIST_FILE:
+			list_file_in_dir();
+			break;
+		case DISPLAY_FREE_BITMAP:
+			disp_bit_map();
+			break;
+		case OPEN_CREATE_FILE:
+		{
+			char fname[9];
+			char ftype[4];
+			get_name_and_type(fname, ftype);
+			fd = open_create_file(fname, ftype);
+			if(fd >= 0) {
+				printf("File '%s.%s' is opened\n", directory[fd].filename, directory[fd].filetype);
+			} else if (fd == -1) {
+				printf("File '%s.%s' is created\n",fname, ftype);
+			} else {
+				printf("Error! Open/Create file\n");
+			}
+		}
+		break;
+		case READ_FILE:
+			read_file(fd);
+			break;
+		case WRITE_FILE:
+			write_file(fd);
+			break;
+		case DELETE_FILE:
+			delete_file(fd);
+			break;
+		case EXIT:
+		default:
+			break;
+		}
     } while (select != EXIT);
-
     return 0;
 }
 
@@ -172,7 +171,8 @@ int open_create_file(char *fname, char *ftype)
         /* In case found file name and file type in directory
          * Return position of the file as the file descriptor.
          */
-        if(!strcmp(directory[i].filename,fname) && !strcmp(directory[i].filetype, ftype)) {
+        if(strcmp(directory[i].filename,fname) == 0 && strcmp(directory[i].filetype, ftype) == 0) {
+			printf("\tOpen file '%s.%s' at position [%d]\n", directory[i].filename, directory[i].filetype,i);
             return i;
         }
     }
@@ -193,9 +193,19 @@ int open_create_file(char *fname, char *ftype)
 
 int read_file(int fd)
 {
-    int numbytes = -1;
+    int i = 0;
     fprintf(stderr, "Start read file\n");
-    return numbytes;
+	if(fd > -1) {
+		printf("\tThe File: '%s.%s' occupied blocks No: ",directory[fd].filename, directory[fd].filetype);
+		for (i=0; i<16; i++)
+		{
+			printf("%d, ", directory[fd].blocks [i]);
+		}
+		printf("\n");
+	} else {
+		printf("\tThe file not opened, need open for reading\n");
+	}
+    return 0;
 }
 
 int write_file(int fd)
