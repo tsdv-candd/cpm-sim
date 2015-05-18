@@ -11,6 +11,10 @@
 #define ENTRIES_NUM 	128		/* Number of directory */
 #define FILE_NAME_LEN 	8		/* Lenght of the file name */
 #define FILE_TYPE_LEN 	3		/* Lenght of the file name */
+#define BLOCKS_PER_FILE 16		/* Number of block in each file */
+#define DISK_CAPACITY	360		/* Capacity of the disk in KB */
+#define BLOCK_SIE		4 		/* Size of each block in KB */
+#define NUMBER_OF_BLOCK (DISK_CAPACITY/BLOCK_SIE)
 /* The bitmap */
 extern unsigned char bitmap[BITMAP_LENGHT];
 /* 360Kb disk with 4Kb blocks -> 11.25 bytes for bitmap

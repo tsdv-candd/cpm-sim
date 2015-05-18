@@ -13,49 +13,49 @@ struct CPMdirent directory[ENTRIES_NUM];
 int main ()
 {
     int select = -1;
-	int fd = -1;
+    int fd = -1;
     printf("Hello cpmsim!\n");
     do {
         select = menu();
-		switch(select) 
-		{
-		case INIT_DISK:
-			disk_init();
-			break;
-		case LIST_FILE:
-			list_file_in_dir();
-			break;
-		case DISPLAY_FREE_BITMAP:
-			disp_bit_map();
-			break;
-		case OPEN_CREATE_FILE:
-		{
-			char fname[9];
-			char ftype[4];
-			get_name_and_type(fname, ftype);
-			fd = open_create_file(fname, ftype);
-			if(fd >= 0) {
-				printf("File '%s.%s' is opened\n", directory[fd].filename, directory[fd].filetype);
-			} else if (fd == -1) {
-				printf("File '%s.%s' is created\n",fname, ftype);
-			} else {
-				printf("Error! Open/Create file\n");
-			}
-		}
-		break;
-		case READ_FILE:
-			read_file(fd);
-			break;
-		case WRITE_FILE:
-			write_file(fd);
-			break;
-		case DELETE_FILE:
-			delete_file(fd);
-			break;
-		case EXIT:
-		default:
-			break;
-		}
+        switch(select)
+        {
+        case INIT_DISK:
+            disk_init();
+            break;
+        case LIST_FILE:
+            list_file_in_dir();
+            break;
+        case DISPLAY_FREE_BITMAP:
+            disp_bit_map();
+            break;
+        case OPEN_CREATE_FILE:
+        {
+            char fname[9];
+            char ftype[4];
+            get_name_and_type(fname, ftype);
+            fd = open_create_file(fname, ftype);
+            if(fd >= 0) {
+                printf("File '%s.%s' is opened\n", directory[fd].filename, directory[fd].filetype);
+            } else if (fd == -1) {
+                printf("File '%s.%s' is created\n",fname, ftype);
+            } else {
+                printf("Error! Open/Create file\n");
+            }
+        }
+        break;
+        case READ_FILE:
+            read_file(fd);
+            break;
+        case WRITE_FILE:
+            write_file(fd);
+            break;
+        case DELETE_FILE:
+            delete_file(fd);
+            break;
+        case EXIT:
+        default:
+            break;
+        }
     } while (select != EXIT);
     return 0;
 }
@@ -110,7 +110,6 @@ menu_type menu()
      * Clear stdin after read input
      */
     clear_stdin();
-    //while ( getchar() != '\n' );
 
     return input;
 }
@@ -172,7 +171,7 @@ int open_create_file(char *fname, char *ftype)
          * Return position of the file as the file descriptor.
          */
         if(strcmp(directory[i].filename,fname) == 0 && strcmp(directory[i].filetype, ftype) == 0) {
-			printf("\tOpen file '%s.%s' at position [%d]\n", directory[i].filename, directory[i].filetype,i);
+            printf("\tOpen file '%s.%s' at position [%d]\n", directory[i].filename, directory[i].filetype,i);
             return i;
         }
     }
@@ -195,30 +194,58 @@ int read_file(int fd)
 {
     int i = 0;
     fprintf(stderr, "Start read file\n");
-	if(fd > -1) {
-		printf("\tThe File: '%s.%s' occupied blocks No: ",directory[fd].filename, directory[fd].filetype);
-		for (i=0; i<16; i++)
-		{
-			printf("%d, ", directory[fd].blocks [i]);
-		}
-		printf("\n");
-	} else {
-		printf("\tThe file not opened, need open for reading\n");
-	}
+    if(fd > -1) {
+        printf("\tThe File: '%s.%s' occupied blocks No: ", directory[fd].filename, directory[fd].filetype);
+        for (i=0; i<BLOCKS_PER_FILE; i++)
+        {
+            printf("%d, ", directory[fd].blocks [i]);
+        }
+        printf("\n");
+    } else {
+        printf("\tThe file not opened, need open for reading\n");
+    }
     return 0;
 }
 
 int write_file(int fd)
 {
-    int numbytes = -1;
-    fprintf(stderr, "Start write file\n");
-    return numbytes;
+    int write_flag = 0;
+    char i = 0;
+    /* The maximum size of a ﬁle is 64 kbytes, block's size = 4KB
+     * So maximum number of block per file is 16
+     */
+    if(directory[fd].blockcount == BLOCKS_PER_FILE) {
+        fprintf(stderr, "ERROR: File size reach the limit of 64KB, could not write more data\n");
+        return -1;
+    }
+
+    /* Write data if the block have not occupied by any file.
+     *
+     */
+    for (i=1; i<NUMBER_OF_BLOCK; i++) {
+        if(block_status(i) == 0) {
+            int updateblock_count = -1;
+            updateblock_count = directory[fd].blockcount++;
+            directory[fd].blocks[updateblock_count] = i;
+            toggle_bit(i);
+            write_flag = 1;
+            break;
+        }
+    }
+
+    /* In case disk full, the write_flag will
+     * not change the value.
+     */
+    if(write_flag == 0) {
+        fprintf(stderr, "ERROR: Disk full, could not write more data\n");
+        return -1;
+    }
+    return 0;
 }
 
 
 int delete_file(int fd)
 {
-    //int numbytes = -1;
     fprintf(stderr, "Start delete file\n");
     return 0;
 }
