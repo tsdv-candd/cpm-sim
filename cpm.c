@@ -153,7 +153,6 @@ int open_create_file(char *fname, char *ftype)
     int error = -2;
     int create_file = -1;
     int i = 0;
-    //fprintf(stderr, "Open/Create File\n");
     if((fname == NULL) || ftype == NULL) {
         fprintf(stderr,"Error! could not open NULL file name or file type\n");
         return error;
@@ -229,6 +228,7 @@ int write_file(int fd)
             directory[fd].blocks[updateblock_count] = i;
             toggle_bit(i);
             write_flag = 1;
+            printf("Info: Write block [%d]\n", i);
             break;
         }
     }
@@ -246,8 +246,32 @@ int write_file(int fd)
 
 int delete_file(int fd)
 {
-    fprintf(stderr, "Start delete file\n");
+    int i = 0;
+    if(fd > ENTRIES_NUM) {
+        printf("Error! file descriptor is out of range, [%d]\n",ENTRIES_NUM);
+        return -1;
+    }
+    if(fd <= -1) {
+        printf("Could not delete because no file open, please open it before delete`\n");
+        return -1;
+    }
+
+    /* Free bitmap
+     */
+    for(i=0; i<directory[fd].blockcount+1; i++)
+    {
+        toggle_bit(directory[fd].blocks[i]);
+    }
+
+    /* Reset file name, file type, blocks array and block count of the appropriate entry.
+     */
+    memset(directory[fd].filename, 0, (FILE_NAME_LEN + 1));
+    memset(directory[fd].filetype, 0, (FILE_TYPE_LEN + 1));
+    memset(directory[fd].blocks, 0, BLOCKS_PER_FILE);
+    directory[fd].blockcount = 0;
+    fd = -1;
     return 0;
+
 }
 
 int get_name_and_type( char fname[9], char ftype[4])
