@@ -50,7 +50,7 @@ int main ()
             write_file(fd);
             break;
         case DELETE_FILE:
-            delete_file(fd);
+            delete_file(&fd);
             break;
         case EXIT:
         default:
@@ -210,6 +210,10 @@ int write_file(int fd)
 {
     int write_flag = 0;
     char i = 0;
+	if(fd < 0) {
+		fprintf(stderr, "ERROR: the file has not open yet, please open before write.\n");
+		return -1;
+	}
     /* The maximum size of a ﬁle is 64 kbytes, block's size = 4KB
      * So maximum number of block per file is 16
      */
@@ -244,32 +248,32 @@ int write_file(int fd)
 }
 
 
-int delete_file(int fd)
+int delete_file(int *fd)
 {
     int i = 0;
-    if(fd > ENTRIES_NUM) {
+    if(*fd > ENTRIES_NUM) {
         printf("Error! file descriptor is out of range, [%d]\n",ENTRIES_NUM);
         return -1;
     }
-    if(fd <= -1) {
-        printf("Could not delete because no file open, please open it before delete`\n");
+    if(*fd < 0) {
+        printf("Could not delete because no file open, please open it before delete\n");
         return -1;
     }
 
     /* Free bitmap
      */
-    for(i=0; i<directory[fd].blockcount+1; i++)
+    for(i=0; i<directory[*fd].blockcount+1; i++)
     {
-        toggle_bit(directory[fd].blocks[i]);
+        toggle_bit(directory[*fd].blocks[i]);
     }
 
     /* Reset file name, file type, blocks array and block count of the appropriate entry.
      */
-    memset(directory[fd].filename, 0, (FILE_NAME_LEN + 1));
-    memset(directory[fd].filetype, 0, (FILE_TYPE_LEN + 1));
-    memset(directory[fd].blocks, 0, BLOCKS_PER_FILE);
-    directory[fd].blockcount = 0;
-    fd = -1;
+    memset(directory[*fd].filename, 0, (FILE_NAME_LEN + 1));
+    memset(directory[*fd].filetype, 0, (FILE_TYPE_LEN + 1));
+    memset(directory[*fd].blocks, 0, BLOCKS_PER_FILE);
+    directory[*fd].blockcount = 0;
+    *fd = -1;
     return 0;
 
 }

@@ -94,7 +94,7 @@ int write_file(int fd);
 /* Write file by the file descriptor
 */
 
-int delete_file(int fd);
+int delete_file(int *fd);
 /* Delete file by the file descriptor
 */
 
