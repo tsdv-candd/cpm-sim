@@ -111,12 +111,19 @@ menu_type menu()
      */
     clear_stdin();
 
+    /* Return the value appropriate to the selected key Num.
+     */
     return input;
 }
 
 void disk_init ()
 {
+    /* Reset bitmap.
+    */
     memset(bitmap, 0, sizeof(bitmap));
+
+    /* Reset directory.
+    */
     memset(directory, 0, sizeof(directory));
 }
 
@@ -124,28 +131,70 @@ void list_file_in_dir()
 {
     int i = 0;
     int is_empty_dir = 1;
-    fprintf(stderr, "List of files in directory\n");
-    printf("-------------------------------------------------------------------------\n");
+    printf("List of files in directory:\n");
+    printf("+-----------------------------------------------------------------------+\n");
     printf("|\tFile name\t|\tFile type \t|\tFile size\t|\n");
-    printf("-------------------------------------------------------------------------\n");
+    printf("+-----------------------------------------------------------------------+\n");
+
+    /* List all file in the directory if it existed.
+     */
     for(i = 0; i < ENTRIES_NUM; i++) {
         /*  Print file information : | file name | file type | fileize |
          *	Size of each block = 4 KB then file_size = (block count) *4 (KB)
          */
         if(strlen(directory[i].filename)) {
             printf("|\t%s\t\t|\t%s\t\t|\t%dKB\t\t|\n", directory[i].filename, directory[i].filetype, (directory[i].blockcount * 4));
-            printf("-------------------------------------------------------------------------\n");
+            printf("+-----------------------------------------------------------------------+\n");
             is_empty_dir = 0;
         }
     }
+    /* In case the dirrectory is empty, just notify it's empty directory!
+     */
     if(is_empty_dir) {
-        printf("Empty directory! There is not any file\n");
+        printf("Empty directory!\n");
     }
 }
 
 void disp_bit_map()
 {
-    fprintf(stderr, "Display bitmap status\n");
+    int i=0;
+    int j = 0;
+    int block_post = 0;
+    printf("Bitmap status: 0 - free block, 1 - occupied block\n");
+
+    /* Draw column index (equivalence to 8 bits of each element of bitmap array)
+    */
+    printf("\t");
+    for(j = 0; j < 8; j++) {
+        printf("  %d ", j);
+    }
+    printf("\n\t+---+---+---+---+---+---+---+---+\n");
+    for (i = 0; i < BITMAP_LENGHT; i++) {
+        /* Draw row index 0 - 11 (equivalence to 12 element of bitmap array)
+        */
+        printf("%d\t",i);
+
+        /* Display status of each block:
+         * 0 - the appropriate block are free.
+         * 1 - the appropriate block are occupied by a file.
+         */
+        for(j = 0; j < 8; j++) {
+            /* Calculate block position.
+             */
+            block_post = 8*i + j;
+            if(block_status(block_post)) {
+                /* occupied block
+                 */
+                printf("| 1 ");
+            } else {
+                /* free block.
+                 */
+                printf("| 0 ");
+            }
+        }
+        printf("|\n");
+        printf("\t+---+---+---+---+---+---+---+---+\n");
+    }
 }
 
 int open_create_file(char *fname, char *ftype)
@@ -153,14 +202,23 @@ int open_create_file(char *fname, char *ftype)
     int error = -2;
     int create_file = -1;
     int i = 0;
+
+    /* Not allow Null file name or file type.
+     */
     if((fname == NULL) || ftype == NULL) {
         fprintf(stderr,"Error! could not open NULL file name or file type\n");
         return error;
     }
+
+    /* Not allowed the file name > 8
+     */
     if(strlen(fname) > FILE_NAME_LEN) {
         fprintf(stderr,"Error! not allow file name length > %d\n", FILE_NAME_LEN);
         return error;
     }
+
+    /* Not allowed the file type > 3
+     */
     if(strlen(ftype) > FILE_TYPE_LEN) {
         fprintf(stderr,"Error! not allow file type length > %d\n", FILE_TYPE_LEN);
         return error;
@@ -169,7 +227,8 @@ int open_create_file(char *fname, char *ftype)
         /* In case found file name and file type in directory
          * Return position of the file as the file descriptor.
          */
-        if(strcmp(directory[i].filename,fname) == 0 && strcmp(directory[i].filetype, ftype) == 0) {
+        if((strcmp(directory[i].filename,fname) == 0)
+                && (strcmp(directory[i].filetype, ftype) == 0)) {
             printf("\tOpen file '%s.%s' at position [%d]\n", directory[i].filename, directory[i].filetype,i);
             return i;
         }
@@ -210,10 +269,10 @@ int write_file(int fd)
 {
     int write_flag = 0;
     char i = 0;
-	if(fd < 0) {
-		fprintf(stderr, "ERROR: the file has not open yet, please open before write.\n");
-		return -1;
-	}
+    if(fd < 0) {
+        fprintf(stderr, "ERROR: the file has not open yet, please open before write.\n");
+        return -1;
+    }
     /* The maximum size of a ﬁle is 64 kbytes, block's size = 4KB
      * So maximum number of block per file is 16
      */
